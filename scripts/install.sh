@@ -40,6 +40,8 @@ echo "[3/7] 安装面板文件"
 if [[ "$SOURCE_DIR" != "$APP_DIR" ]]; then
   mkdir -p "$APP_DIR"
   cp -a "$SOURCE_DIR/flask_app.py" "$SOURCE_DIR/public" "$SOURCE_DIR/requirements-flask.txt" "$APP_DIR/"
+  mkdir -p "$APP_DIR/scripts"
+  cp -a "$SOURCE_DIR/scripts/backup.sh" "$SOURCE_DIR/scripts/uninstall.sh" "$APP_DIR/scripts/"
 fi
 chown -R root:root "$APP_DIR"
 chmod 755 "$APP_DIR"
