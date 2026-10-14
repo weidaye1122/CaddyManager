@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#1e7a50">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Caddy Manager">
+  <title>Caddy Manager Lite</title>
+  <link rel="icon" href="/favicon.ico" sizes="any">
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <section id="auth-screen" class="auth-screen hidden">
+    <div class="auth-card">
+      <p class="eyebrow">PERSONAL SERVER</p>
+      <h1 id="auth-title">登录 Caddy Manager</h1>
+      <p id="auth-subtitle" class="subtitle">请输入管理员账号和密码。</p>
+      <form id="auth-form">
+        <label>管理员账号<input id="auth-username" required autocomplete="username" placeholder="admin"></label>
+        <label>密码<input id="auth-password" type="password" required autocomplete="new-password" placeholder="至少 8 位"></label>
+        <label id="confirm-row">确认密码<input id="auth-confirm" type="password" autocomplete="new-password" placeholder="再次输入密码"></label>
+        <p id="auth-error" class="auth-error" role="alert"></p>
+        <button class="button primary auth-submit" id="auth-submit" type="submit">完成设置</button>
+      </form>
+    </div>
+  </section>
+
+  <main id="app" class="shell hidden">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">PERSONAL SERVER</p>
+        <h1>Caddy Manager</h1>
+        <p class="subtitle">用一个简单页面管理反向代理和自动 HTTPS。</p>
+      </div>
+      <div class="top-actions"><div class="status-pill" id="status"><span class="dot"></span>检测中</div><button class="button secondary" id="logout"><span class="button-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 5H5v14h5M14 8l4 4-4 4M8 12h10"/></svg></span>退出登录</button></div>
+    </header>
+
+    <section class="toolbar card">
+      <div>
+        <h2>反代站点</h2>
+        <p class="muted">保存时会先校验配置，成功后才应用到 Caddy。</p>
+      </div>
+      <div class="toolbar-actions">
+        <button class="button secondary" id="backup"><span class="button-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"/></svg></span>导出配置</button>
+        <label class="button secondary file-button"><span class="button-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14" transform="rotate(180 12 12)"/></svg></span>导入配置<input id="restore" type="file" accept="application/json"></label>
+        <button class="button primary" id="add"><span class="button-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span>添加站点</button>
+      </div>
+    </section>
+
+    <section id="empty" class="card empty hidden">
+      <div class="empty-icon">＋</div>
+      <h2>还没有反代站点</h2>
+      <p class="muted">添加第一个域名后，Caddy 会自动申请 HTTPS 证书。</p>
+      <button class="button primary" id="empty-add">添加站点</button>
+    </section>
+
+    <section id="sites" class="sites"></section>
+    <p id="message" class="message" role="status"></p>
+  </main>
+
+  <dialog id="editor">
+    <form method="dialog" id="site-form" class="dialog-card">
+      <div class="dialog-head"><div><p class="eyebrow">SITE CONFIG</p><h2 id="dialog-title">添加站点</h2></div><button class="icon-button cancel-edit" type="button" aria-label="关闭">×</button></div>
+      <label>域名<input id="domain" required placeholder="ha.example.com" autocomplete="off"></label>
+      <label>上游地址<input id="upstream" required placeholder="127.0.0.1:8123" autocomplete="off"></label>
+      <label>上游协议<select id="upstreamProtocol"><option value="http">HTTP</option><option value="https">HTTPS</option></select></label>
+      <label>备注（可选）<input id="note" maxlength="120" placeholder="例如：家庭助手、NAS、测试环境" autocomplete="off"></label>
+      <label class="switch-row"><input id="enabled" type="checkbox" checked><span>启用此站点</span></label>
+      <p class="hint">证书由 Caddy 自动申请和续期。域名需要解析到服务器，且 80/443 端口可访问。</p>
+      <p id="editor-error" class="auth-error" role="alert"></p>
+      <div class="dialog-actions"><button class="button secondary cancel-edit" type="button">取消</button><button class="button primary" id="save" type="submit">保存并应用</button></div>
+    </form>
+  </dialog>
+  <script src="/app.js"></script>
+</body>
+</html>

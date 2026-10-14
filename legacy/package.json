@@ -1,0 +1,9 @@
+{
+  "name": "caddy-manager-lite",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A small personal web UI for managing Caddy reverse proxy sites.",
+  "scripts": {
+    "start": "node server.js"
+  }
+}

@@ -1,0 +1,19 @@
+[Unit]
+Description=Caddy Manager Lite
+After=network-online.target caddy.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=caddy
+Group=caddy
+WorkingDirectory=/opt/caddy-manager
+EnvironmentFile=/etc/caddy-manager.env
+ExecStart=/usr/bin/python3 /opt/caddy-manager/flask_app.py
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

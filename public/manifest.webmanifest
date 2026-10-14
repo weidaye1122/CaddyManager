@@ -1,0 +1,14 @@
+{
+  "name": "Caddy Manager",
+  "short_name": "Caddy Manager",
+  "description": "个人服务器反向代理和 HTTPS 管理面板",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f4f8f4",
+  "theme_color": "#1e7a50",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

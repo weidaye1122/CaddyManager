@@ -1,0 +1,20 @@
+# Runtime data and credentials
+data/
+*.env
+.env
+auth.json
+sites.json
+backups/
+*.bak
+*.candidate-*
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# Logs and local probes
+*.log
+.DS_Store
