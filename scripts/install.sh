@@ -77,6 +77,8 @@ ExecStart=
 ExecStart=/usr/bin/caddy run --environ --config $CADDYFILE
 ExecReload=
 ExecReload=/usr/bin/caddy reload --config $CADDYFILE --force
+Restart=on-failure
+RestartSec=5s
 EOF
 
 echo "[6/7] 校验并启动服务"
@@ -89,8 +91,15 @@ systemctl enable "$SERVICE_NAME"
 systemctl restart "$SERVICE_NAME"
 
 echo "[7/7] 检查结果"
-systemctl is-active --quiet caddy
-systemctl is-active --quiet "$SERVICE_NAME"
+for service in caddy "$SERVICE_NAME"; do
+  systemctl is-enabled --quiet "$service"
+  systemctl is-active --quiet "$service"
+  case "$(systemctl show --property=Restart --value "$service")" in
+    on-failure|always) ;;
+    *) echo "错误：$service 的异常自动重启策略未生效，请检查 systemd 覆盖配置。" >&2; exit 1 ;;
+  esac
+done
 echo "安装完成。首次访问面板时设置管理员账号和密码。"
+echo "Caddy 和面板均已启用开机自启及异常自动重启。"
 echo "面板默认监听：http://127.0.0.1:7080"
 echo "备份目录：$backup_dir"

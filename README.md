@@ -38,7 +38,7 @@ CADDY_MANAGER_VERSION=v1.0.0 bash <(wget -qO- https://raw.githubusercontent.com/
 2. 备份已有 Caddyfile 和 systemd drop-in；
 3. 安装面板服务；
 4. 让 Caddy 使用面板生成的 Caddyfile；
-5. 校验并启动 Caddy 和面板。
+5. 校验并启动 Caddy 和面板，启用开机自启和异常自动重启。
 
 面板默认监听 `127.0.0.1:7080`。首次访问时设置管理员账号和密码。需要从其他设备访问时，建议通过 HTTPS 域名、Tailscale 或 SSH 隧道进入面板。
 
@@ -75,6 +75,8 @@ backups/        配置备份
 不要把 `auth.json`、`sites.json`、备份文件、环境文件或私钥提交到 Git 仓库。
 
 ## 维护
+
+Caddy 和面板安装后均会随系统开机启动。异常退出时，Caddy 等待 5 秒自动重启，面板等待 3 秒自动重启；手动停止服务不会触发自动拉起。再次执行安装脚本会更新这两项服务设置。
 
 查看服务状态：
 
