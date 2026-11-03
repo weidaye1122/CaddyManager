@@ -8,7 +8,7 @@
 
 开发中的变更见 [更新记录](CHANGELOG.md)，本地改动不代表已发布新版本。
 
-自用或小范围维护按“修改 → 必要检查 → 保存到 GitHub”进行，需要给使用者更新时再发布版本。日常不强制 PR，完整 Linux 安装检查按需运行。
+自用或小范围维护按“本地开发 → 必要的本地检查 → 保存到 GitHub”进行，相关改动可以一起保存，需要给使用者更新时再发布版本。日常可直接使用 `main`，较大修改需要隔离时再建分支，不强制 PR 或多人审批。完整 Linux 安装检查按改动范围运行。
 
 ## 项目文档
 
@@ -45,7 +45,7 @@ caddy_installer="$(mktemp)" && curl -fL https://github.com/weidaye1122/CaddyMana
 caddy_installer="$(mktemp)" && curl -fL https://github.com/weidaye1122/CaddyManager/releases/download/v1.0.1/install.sh -o "$caddy_installer" && CADDY_MANAGER_VERSION=v1.0.1 bash "$caddy_installer" && rm -f "$caddy_installer"
 ```
 
-如果仓库尚未发布包含新流程的正式 Release，上述地址暂不可用。历史 `v1.0.0` 仅有源码标签，不含新安装入口需要的发布附件。新入口遇到缺包或校验失败会停止，不会回退安装开发源码。首次启用顺序见 [正式发版流程](docs/RELEASING.md)。
+`v1.0.1` 已提供正式发布附件；历史 `v1.0.0` 仅有源码标签。没有可用正式 Release、缺包或校验失败时，入口会明确报错停止，不会回退安装开发源码。日常推送开发代码不改变默认安装版本，指定版本仍通过对应正式附件安装。
 
 安装脚本会：
 

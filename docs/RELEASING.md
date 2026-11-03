@@ -81,6 +81,69 @@ GitHub 自带的 “Source code” 下载和上述安装包不同，自动生成
 
 输出在 `dist/`，不会提交到 Git。相同提交和工具链重复打包应得到相同校验值。打包只读取 Git 已跟踪内容，因此应在提交前确认没有误纳入凭据或数据；忽略的 `.venv/`、`.local/` 和 `dist/` 不会进入包。
 
+## 发布后的附件验收
+
+现有工作流在发布前验证标签源码。正式 Release 公开后，还需验证实际下载的附件；完成这些步骤后再将本次发版标记为验收完成。复用现有下载、元数据和 Linux 检查能力，无需另建发布系统，也不增加日常推送的检查范围。
+
+1. 从默认最新入口和本次固定版本入口分别下载三个附件，核对 SHA256、包内版本及提交身份。两个入口应取得本次发布的同一组附件；如果另一个新版本已成为最新，先核实原因。
+2. 对实际下载的包运行两种发行版的 `--package` 检查，覆盖新安装、旧版升级、账号/站点/环境/本地证书保留、服务重启、备份数据恢复和卸载保留数据。
+3. 在隔离环境另做程序版本回滚演练，按下文核对；现有 `--package` 检查不包含这一步。
+
+以下命令在仓库目录运行，以已公开的本次标签 `v1.0.2` 为例；替换为实际发布标签。仅用于下载和一次性容器验证，不在宿主机执行安装脚本：
+
+```bash
+(
+  set -euo pipefail
+  caddy_release_tag=v1.0.2
+  caddy_release_repo=https://github.com/weidaye1122/CaddyManager
+  caddy_release_dir="$(mktemp -d)"
+  trap 'rm -rf -- "$caddy_release_dir"' EXIT
+
+  for caddy_selection in latest "$caddy_release_tag"; do
+    mkdir "$caddy_release_dir/$caddy_selection"
+    if [ "$caddy_selection" = latest ]; then
+      caddy_download_url="$caddy_release_repo/releases/latest/download"
+    else
+      caddy_download_url="$caddy_release_repo/releases/download/$caddy_selection"
+    fi
+    for caddy_asset in install.sh caddy-manager.tar.gz SHA256SUMS; do
+      curl -fLsS --retry 2 "$caddy_download_url/$caddy_asset" \
+        -o "$caddy_release_dir/$caddy_selection/$caddy_asset"
+    done
+    (
+      cd "$caddy_release_dir/$caddy_selection"
+      if command -v sha256sum >/dev/null 2>&1; then
+        sha256sum -c SHA256SUMS
+      else
+        shasum -a 256 -c SHA256SUMS
+      fi
+    )
+  done
+  cmp "$caddy_release_dir/latest/SHA256SUMS" "$caddy_release_dir/$caddy_release_tag/SHA256SUMS"
+  tar -xzf "$caddy_release_dir/$caddy_release_tag/caddy-manager.tar.gz" -C "$caddy_release_dir"
+  .venv/bin/python - "$caddy_release_dir/caddy-manager" "$caddy_release_tag" <<'PY'
+import subprocess
+import sys
+from pathlib import Path
+from scripts.install_metadata import source_info
+
+info = source_info(Path(sys.argv[1]))
+commit = subprocess.check_output(['git', 'rev-parse', sys.argv[2] + '^{commit}'], text=True).strip()
+if info['tag'] != sys.argv[2] or info['commit'] != commit:
+    raise SystemExit('发布包版本或提交身份不一致，已停止验收。')
+print(f"发布包身份正确：{info['tag']} ({info['commit']})")
+PY
+  .venv/bin/python scripts/check_linux.py --base debian:bookworm-slim \
+    --package "$caddy_release_dir/$caddy_release_tag/caddy-manager.tar.gz"
+  .venv/bin/python scripts/check_linux.py --base ubuntu:24.04 \
+    --package "$caddy_release_dir/$caddy_release_tag/caddy-manager.tar.gz"
+)
+```
+
+程序版本回滚演练使用一次性 Debian/Ubuntu 环境和测试账号、站点。在升级前保存旧程序、配套数据、环境文件、服务与 Caddy 覆盖配置及实际证书存储，安装本次下载的包，再按 [恢复面板数据和程序](OPERATIONS.md#恢复面板数据和程序) 恢复升级前状态。验证旧版本和原账号可用、站点/备注/启停状态及配置完整、代理和本地 HTTPS 正常，记录旧、新版本、恢复范围和结果。涉及数据格式变化时，还需覆盖本次迁移与恢复路径。现有安装脚本没有自动程序升级回滚功能，卸载不能替代这项演练。
+
+将下载校验结果、环境、版本及安装/升级/回滚结论保存到仓库旁 `本地资料/截图与验证/`。日志默认仍在 `.local/linux-tests/`，需保留的结果再复制过去；临时下载由上面的命令收尾。尚未完成的项目明确记为“未验证”，不能用源码检查或下载成功代替安装与回滚验收。公共 DNS、ACME 申请/续期和真实服务器验收仍按部署范围另行记录。
+
 ## 安装和升级使用什么版本
 
 - 默认安装入口下载 `releases/latest/download/` 的正式附件。
@@ -105,5 +168,7 @@ GitHub 自带的 “Source code” 下载和上述安装包不同，自动生成
 ## 已有版本
 
 `v1.0.1` 已按此发布方式提供正式附件；历史 `v1.0.0` 只有源码标签。两者均保留，不因维护流程精简而删除或改写。
+
+已有 `v1.0.1` 记录证明标签源码通过隔离 Linux 检查，公开附件通过下载、校验和解包检查；实际附件的隔离安装及完整程序版本回滚没有记录为已完成。本次补齐后续验收约定，不追记为历史通过。
 
 后续按需要发布递增版本。版本公开、安装检查和现有服务器升级分别说明，不把发布成功当作服务器已经更新。

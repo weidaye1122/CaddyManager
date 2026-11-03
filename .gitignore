@@ -4,6 +4,7 @@ data/
 .env
 .env.*
 !.env.example
+!*.env.example
 .local/
 dist/
 install-info.json
@@ -11,8 +12,17 @@ install-info.json.tmp
 auth.json
 sites.json
 backups/
+backup/
 *.bak
 *.candidate-*
+*.key
+*.pem
+*.p12
+*.pfx
+*.tar.gz
+*.tgz
+*.zip
+/本地资料/
 
 # Python
 __pycache__/
@@ -22,5 +32,7 @@ venv/
 .pytest_cache/
 
 # Logs and local probes
+logs/
 *.log
+*.log.*
 .DS_Store
