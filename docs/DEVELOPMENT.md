@@ -56,8 +56,8 @@ CADDY_MANAGER_DEV_PORT=17081 bash scripts/dev.sh
 ## 每次修改的流程
 
 1. 查看 `git status`，明确修改原因及完成条件。较大的改动可复制 [记录模板](templates/CHANGE.md) 到 `../本地资料/讨论与记录/`。
-2. 在 `codex/简短任务名` 分支修改，保留无关工作；不要用复制“最终版文件夹”的方式管理代码版本。
-3. 运行统一检查，处理失败后再继续：
+2. 日常修改可直接在 `main` 保存和推送，不强制使用分支或 PR。较大改动需要隔离时再用 `codex/简短任务名` 分支，保留无关工作。
+3. 代码或脚本改动运行基本检查，处理失败后再继续；纯文档改动核对内容和链接即可：
 
    ```bash
    bash scripts/check.sh
@@ -65,15 +65,15 @@ CADDY_MANAGER_DEV_PORT=17081 bash scripts/dev.sh
 
 4. 按修改范围进行页面操作检查，必要时补行为测试。
 5. 查看差异，更新说明和 [更新记录](../CHANGELOG.md)。检查提交范围中没有 `.local/`、账号、备份或环境实值。
-6. 在记录中写清楚结果、遗留问题及是否已提交、发布或部署。
+6. 按任务授权提交、推送，说明结果及是否发布。普通修改不必另建一份记录；有必要保留的验证或恢复信息再写入本地资料。
 
-检查脚本包含依赖一致性、Python 语法、自动化测试、Shell 语法和已跟踪差异格式检查。发布测试使用临时 Git 仓库和本地下载替身，不执行系统安装或访问 GitHub。Shell 检查仅解析语法。GitHub 工作流配置了 Python 3.11 / 3.12 检查；推送后需要查看实际运行结果，不能把本机通过当作远端通过。
+检查脚本包含依赖一致性、Python 语法、自动化测试、Shell 语法和已跟踪差异格式检查。发布测试使用临时 Git 仓库和本地下载替身，不执行系统安装或访问 GitHub。日常推送仍自动运行 Python 3.11 / 3.12 基本检查，但不设置强制审核或上传门槛；检查失败时处理对应问题即可。主分支保留防强制覆盖和防删除。
 
 准备正式版本时使用 [正式发版流程](RELEASING.md)，普通开发推送不会自动发布。
 
 ## Linux 集成检查
 
-需要 Docker 和 Buildx，使用一次性 Debian 12 / Ubuntu 24.04 容器运行真实 systemd、Caddy 和发行版 Python 依赖：
+只有涉及安装、升级、备份、Caddy 或数据兼容的改动，才按需要运行完整检查。日常改说明、样式等不运行这套环境。需要 Docker 和 Buildx：
 
 ```bash
 .venv/bin/python scripts/check_linux.py --base debian:bookworm-slim
@@ -86,7 +86,7 @@ CADDY_MANAGER_DEV_PORT=17081 bash scripts/dev.sh
 
 HTTPS 测试使用 `qa.localhost` 和 Caddy 的本地 CA，验证真实 TLS 和反向代理；公共 DNS、ACME 申请/续期、物理机重启仍属于具体部署的验收范围。
 
-正式发布后可用 `--package /绝对路径/caddy-manager.tar.gz` 验证实际发布附件。GitHub 普通检查及正式发版都包含两个发行版的集成任务，使用公开仓库的标准 Linux runner。
+正式发布后可用 `--package /绝对路径/caddy-manager.tar.gz` 验证实际发布附件。GitHub 日常推送和 PR 会跳过完整 Linux 检查；需要时手动运行 `Checks` 工作流，或使用上述本地命令。正式发版仍自动运行完整检查，使用公开仓库的标准 Linux runner。
 
 ## 按改动选择验证
 

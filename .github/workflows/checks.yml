@@ -37,6 +37,7 @@ jobs:
         run: bash scripts/check.sh
 
   linux:
+    if: github.event_name == 'workflow_dispatch'
     name: Linux / ${{ matrix.distro }}
     runs-on: ubuntu-24.04
     timeout-minutes: 20
