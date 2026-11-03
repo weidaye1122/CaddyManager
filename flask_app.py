@@ -241,6 +241,9 @@ def probe_certificate(site: dict, attempt: int = 0, version: str | None = None) 
     if not site.get("enabled"):
         set_status(site, "disabled", message="站点已停用")
         return
+    if SKIP_CADDY:
+        set_status(site, "unknown", message="开发模式：未检查证书")
+        return
     if site["domain"].startswith("*."):
         set_status(site, "unknown", message="泛域名证书需要 DNS 验证配置")
         return

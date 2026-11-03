@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -Eeuo pipefail
+umask 077
 
 DATA_DIR="${CADDY_MANAGER_DATA:-/var/lib/caddy-manager}"
 ENV_FILE="${CADDY_MANAGER_ENV_FILE:-/etc/caddy-manager.env}"

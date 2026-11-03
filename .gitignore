@@ -2,6 +2,12 @@
 data/
 *.env
 .env
+.env.*
+!.env.example
+.local/
+dist/
+install-info.json
+install-info.json.tmp
 auth.json
 sites.json
 backups/

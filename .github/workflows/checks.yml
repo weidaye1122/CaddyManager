@@ -1,0 +1,61 @@
+name: Checks
+
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Unit / Python ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ['3.11', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: |
+            requirements-flask.txt
+            requirements-dev.txt
+      - name: Prepare environment
+        run: |
+          python -m venv .venv
+          .venv/bin/python -m pip install -r requirements-dev.txt
+      - name: Run checks
+        run: bash scripts/check.sh
+
+  linux:
+    name: Linux / ${{ matrix.distro }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: Debian 12
+            base: debian:bookworm-slim
+          - distro: Ubuntu 24.04
+            base: ubuntu:24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify install, upgrade and recovery
+        env:
+          TEST_BASE: ${{ matrix.base }}
+        run: python3 scripts/check_linux.py --base "$TEST_BASE"
+      - name: Show diagnostic logs on failure
+        if: failure()
+        run: find .local/linux-tests -name run.log -exec tail -n 100 {} \;

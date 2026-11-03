@@ -17,6 +17,7 @@ class Acceptance(unittest.TestCase):
         panel.auth = None
         panel.sessions.clear()
         panel.site_statuses.clear()
+        panel.probe_versions.clear()
         self.client = panel.app.test_client()
         self.probes = patch.object(panel, 'refresh_statuses')
         self.probes.start()
@@ -63,6 +64,48 @@ class Acceptance(unittest.TestCase):
             panel.refresh_statuses([{**site,'upstream':'127.0.0.1:2'}],[site])
             timer.assert_not_called()
         self.probes.start()
+    def test_development_certificate_probe_does_not_connect(self):
+        site = dict(id='local', domain='demo.example.com', enabled=True)
+        panel.sites = [site]
+        with patch.object(panel, 'SKIP_CADDY', True), \
+             patch.object(panel.socket, 'create_connection') as connect, \
+             patch.object(panel.threading, 'Timer') as timer:
+            panel.probe_certificate(site)
+            connect.assert_not_called()
+            timer.assert_not_called()
+        self.assertEqual(panel.status_for(site)['state'], 'unknown')
+        self.assertIn('开发模式', panel.status_for(site)['message'])
+        panel.probe_certificate({**site, 'enabled': False})
+        # A stale probe must not overwrite the current site's status.
+        self.assertEqual(panel.status_for(site)['state'], 'unknown')
+        panel.sites = [{**site, 'enabled': False}]
+        panel.probe_certificate(panel.sites[0])
+        self.assertEqual(panel.status_for(site)['state'], 'disabled')
+    def test_development_apply_does_not_write_config_or_run_caddy(self):
+        config = Path(scratch.name) / 'development-Caddyfile'
+        config.write_text('existing config')
+        with patch.object(panel, 'SKIP_CADDY', True), \
+             patch.object(panel, 'CADDYFILE', config), \
+             patch.object(panel, 'run') as run:
+            result = panel.validate_and_reload([
+                dict(domain='demo.example.com', upstream='127.0.0.1:8000', enabled=True)
+            ])
+            self.assertTrue(result['skipped'])
+            self.assertIn('reverse_proxy 127.0.0.1:8000', result['config'])
+            self.assertEqual(config.read_text(), 'existing config')
+            run.assert_not_called()
+    def test_normal_mode_still_checks_certificates(self):
+        site = dict(id='normal', domain='demo.example.com', enabled=True)
+        panel.sites = [site]
+        with patch.object(panel, 'SKIP_CADDY', False), \
+             patch.object(panel.socket, 'create_connection') as connect, \
+             patch.object(panel.ssl, 'create_default_context') as context:
+            secure = context.return_value.wrap_socket.return_value.__enter__.return_value
+            secure.getpeercert.return_value = {'notAfter': 'Jan 01 00:00:00 2050 GMT'}
+            panel.probe_certificate(site)
+            connect.assert_called_once_with(('127.0.0.1', 443), timeout=8)
+            self.assertEqual(context.return_value.wrap_socket.call_args.kwargs['server_hostname'], site['domain'])
+        self.assertEqual(panel.status_for(site)['state'], 'active')
     def test_caddy_validate_and_reload_failure_preserve_config(self):
         directory=Path(scratch.name)
         config=directory/'Caddyfile'
