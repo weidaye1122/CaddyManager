@@ -65,13 +65,13 @@ def main():
                 else:
                     raise RuntimeError('Temporary systemd container did not become ready.')
                 run('docker', 'exec', container, 'mkdir', '-p', '/candidate', '/legacy', '/qa')
-                run('docker', 'cp', str(candidate), f'{container}:/tmp/candidate.tar')
-                run('docker', 'cp', str(legacy), f'{container}:/tmp/legacy.tar')
-                extract = ['docker', 'exec', container, 'tar', '-xf', '/tmp/candidate.tar', '-C', '/candidate']
+                run('docker', 'cp', str(candidate), f'{container}:/qa/candidate.tar')
+                run('docker', 'cp', str(legacy), f'{container}:/qa/legacy.tar')
+                extract = ['docker', 'exec', container, 'tar', '-xf', '/qa/candidate.tar', '-C', '/candidate']
                 if args.package:
                     extract += ['--strip-components=1']
                 run(*extract)
-                run('docker', 'exec', container, 'tar', '-xf', '/tmp/legacy.tar', '-C', '/legacy')
+                run('docker', 'exec', container, 'tar', '-xf', '/qa/legacy.tar', '-C', '/legacy')
                 run('docker', 'cp', str(ROOT / 'tests/integration/exercise.py'), f'{container}:/qa/exercise.py')
                 result = run('docker', 'exec', container, 'python3', '/qa/exercise.py', '--scenario', scenario, check=False)
                 run('docker', 'cp', f'{container}:/qa/result.json', str(output / f'{scenario}.json'), check=False)

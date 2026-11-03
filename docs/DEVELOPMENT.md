@@ -71,6 +71,23 @@ CADDY_MANAGER_DEV_PORT=17081 bash scripts/dev.sh
 
 准备正式版本时使用 [正式发版流程](RELEASING.md)，普通开发推送不会自动发布。
 
+## Linux 集成检查
+
+需要 Docker 和 Buildx，使用一次性 Debian 12 / Ubuntu 24.04 容器运行真实 systemd、Caddy 和发行版 Python 依赖：
+
+```bash
+.venv/bin/python scripts/check_linux.py --base debian:bookworm-slim
+.venv/bin/python scripts/check_linux.py --base ubuntu:24.04
+```
+
+检查使用当前 `HEAD` 已提交源码，升级起点为历史 `v1.0.0`；因此先保存需要验证的代码提交。每个发行版分别执行新安装和旧版升级场景，验证账号、站点、环境配置和本地证书保留、服务异常重启、实际备份归档恢复及卸载保留数据。
+
+日志在 `.local/linux-tests/`。脚本只删除自己创建的容器、镜像和独立 Buildx 缓存，不清理其他项目的 Docker 资源。容器为运行 systemd 使用特权模式，但不挂载主机目录、不映射主机端口。不要把测试容器用于生产运行。
+
+HTTPS 测试使用 `qa.localhost` 和 Caddy 的本地 CA，验证真实 TLS 和反向代理；公共 DNS、ACME 申请/续期、物理机重启仍属于具体部署的验收范围。
+
+正式发布后可用 `--package /绝对路径/caddy-manager.tar.gz` 验证实际发布附件。GitHub 普通检查及正式发版都包含两个发行版的集成任务，使用公开仓库的标准 Linux runner。
+
 ## 按改动选择验证
 
 | 修改范围 | 除统一检查外，需要验证的内容 |

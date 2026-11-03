@@ -4,7 +4,7 @@
 
 面板使用 Flask + Waitress 提供 Web 管理界面，Caddy 负责反向代理、HTTPS 证书申请和自动续期。面板只管理“域名 → 上游地址”规则，不替代 Caddy 本身。
 
-当前版本：`1.0.0`
+当前版本：`1.0.1`
 
 开发中的变更见 [更新记录](CHANGELOG.md)，本地改动不代表已发布新版本。
 
@@ -31,7 +31,7 @@
 
 ## 一键安装
 
-支持 Debian/Ubuntu + systemd 的 VPS。默认安装最新正式 Release，不安装 `main` 的开发源码。请使用 root 执行：
+目标环境为 Debian 12 / Ubuntu 24.04 + systemd；其他发行版需另行验证。默认安装最新正式 Release，不安装 `main` 的开发源码。请使用 root 执行：
 
 ```bash
 caddy_installer="$(mktemp)" && curl -fL https://github.com/weidaye1122/CaddyManager/releases/latest/download/install.sh -o "$caddy_installer" && bash "$caddy_installer" && rm -f "$caddy_installer"

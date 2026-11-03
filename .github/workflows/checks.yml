@@ -15,6 +15,7 @@ concurrency:
 
 jobs:
   check:
+    name: Unit / Python ${{ matrix.python }}
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -34,3 +35,27 @@ jobs:
           .venv/bin/python -m pip install -r requirements-dev.txt
       - name: Run checks
         run: bash scripts/check.sh
+
+  linux:
+    name: Linux / ${{ matrix.distro }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - distro: Debian 12
+            base: debian:bookworm-slim
+          - distro: Ubuntu 24.04
+            base: ubuntu:24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify install, upgrade and recovery
+        env:
+          TEST_BASE: ${{ matrix.base }}
+        run: python3 scripts/check_linux.py --base "$TEST_BASE"
+      - name: Show diagnostic logs on failure
+        if: failure()
+        run: find .local/linux-tests -name run.log -exec tail -n 100 {} \;

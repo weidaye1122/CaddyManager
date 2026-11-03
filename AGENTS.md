@@ -24,7 +24,7 @@
 - 修改持久化格式时考虑已有 `auth.json`、`sites.json` 的兼容性，说明迁移及恢复办法。
 - 密码、令牌、私钥、运行数据、环境实值与备份不进入 Git、测试样例或日志。
 - `CADDY_MANAGER_SKIP_CADDY=1` 不得执行 Caddy 命令、访问 Admin API 或连接证书端口。
-- 测试不得执行安装、卸载、`systemctl` 或访问真实服务器；真实 Caddy 与 Linux 部署验证单独安排。
+- 单元测试不得执行安装、卸载、`systemctl` 或访问真实服务器。`scripts/check_linux.py` 单独在一次性容器中执行真实系统集成检查，不挂载主机数据、不发布端口，不使用生产服务器。
 
 ## 文档和材料
 

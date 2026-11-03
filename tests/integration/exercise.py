@@ -25,7 +25,11 @@ client = None
 
 
 def run(*cmd):
-    return subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT).strip()
+    try:
+        return subprocess.check_output(cmd, text=True, stderr=subprocess.STDOUT).strip()
+    except subprocess.CalledProcessError as exc:
+        print(exc.output, flush=True)
+        raise
 
 
 def new_client():
