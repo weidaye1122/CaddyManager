@@ -11,6 +11,14 @@ CADDY_DROPIN="$CADDY_DROPIN_DIR/caddy-manager.conf"
 BACKUP_ROOT="/var/backups/caddy-manager"
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 SOURCE_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+metadata_written=0
+record_failure() {
+  if [[ "$metadata_written" == 1 ]]; then
+    python3 "$SOURCE_DIR/scripts/install_metadata.py" "$SOURCE_DIR" \
+      --output "$APP_DIR/install-info.json" --status failed || true
+  fi
+}
+trap record_failure ERR
 
 if [[ "${EUID}" -ne 0 ]]; then
   echo "请使用 root 运行：sudo ./scripts/install.sh" >&2
@@ -29,19 +37,25 @@ echo "[1/7] 安装系统依赖"
 export DEBIAN_FRONTEND=noninteractive
 apt-get update -qq
 apt-get install -y -qq ca-certificates caddy python3-flask python3-waitress
+python3 "$SOURCE_DIR/scripts/install_metadata.py" "$SOURCE_DIR"
 
 echo "[2/7] 备份现有配置"
 [[ -f /etc/caddy/Caddyfile ]] && cp -a /etc/caddy/Caddyfile "$backup_dir/Caddyfile.before-manager"
 [[ -f "$CADDY_DROPIN" ]] && cp -a "$CADDY_DROPIN" "$backup_dir/caddy-manager.conf.before-manager"
 [[ -f "$ENV_FILE" ]] && cp -a "$ENV_FILE" "$backup_dir/caddy-manager.env.before-manager"
+[[ -f "$APP_DIR/VERSION" ]] && cp -a "$APP_DIR/VERSION" "$backup_dir/VERSION.before-manager"
+[[ -f "$APP_DIR/install-info.json" ]] && cp -a "$APP_DIR/install-info.json" "$backup_dir/install-info.before-manager.json"
 printf '%s\n' "$backup_dir" > "$DATA_DIR/.last-install-backup"
 
 echo "[3/7] 安装面板文件"
+python3 "$SOURCE_DIR/scripts/install_metadata.py" "$SOURCE_DIR" \
+  --output "$APP_DIR/install-info.json" --status installing
+metadata_written=1
 if [[ "$SOURCE_DIR" != "$APP_DIR" ]]; then
   mkdir -p "$APP_DIR"
-  cp -a "$SOURCE_DIR/flask_app.py" "$SOURCE_DIR/public" "$SOURCE_DIR/requirements-flask.txt" "$APP_DIR/"
+  cp -a "$SOURCE_DIR/flask_app.py" "$SOURCE_DIR/public" "$SOURCE_DIR/requirements-flask.txt" "$SOURCE_DIR/VERSION" "$APP_DIR/"
   mkdir -p "$APP_DIR/scripts"
-  cp -a "$SOURCE_DIR/scripts/backup.sh" "$SOURCE_DIR/scripts/uninstall.sh" "$APP_DIR/scripts/"
+  cp -a "$SOURCE_DIR/scripts/backup.sh" "$SOURCE_DIR/scripts/uninstall.sh" "$SOURCE_DIR/scripts/install_metadata.py" "$APP_DIR/scripts/"
 fi
 chown -R root:root "$APP_DIR"
 chmod 755 "$APP_DIR"
@@ -96,10 +110,14 @@ for service in caddy "$SERVICE_NAME"; do
   systemctl is-active --quiet "$service"
   case "$(systemctl show --property=Restart --value "$service")" in
     on-failure|always) ;;
-    *) echo "错误：$service 的异常自动重启策略未生效，请检查 systemd 覆盖配置。" >&2; exit 1 ;;
+    *) echo "错误：$service 的异常自动重启策略未生效，请检查 systemd 覆盖配置。" >&2; record_failure; exit 1 ;;
   esac
 done
+python3 "$SOURCE_DIR/scripts/install_metadata.py" "$SOURCE_DIR" \
+  --output "$APP_DIR/install-info.json" --status ready
+metadata_written=0
 echo "安装完成。首次访问面板时设置管理员账号和密码。"
+echo "安装版本：$(cat "$APP_DIR/VERSION")；来源与检查状态：$APP_DIR/install-info.json"
 echo "Caddy 和面板均已启用开机自启及异常自动重启。"
 echo "面板默认监听：http://127.0.0.1:7080"
 echo "备份目录：$backup_dir"
